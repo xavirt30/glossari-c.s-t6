@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <title>Glossari Tema 6</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f7fb;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    h1 {
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 2rem;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #555;
+      margin-bottom: 25px;
+    }
+
+    #quizToggle {
+      margin-bottom: 20px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #999;
+      background: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 18px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      transition: 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .term {
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .short {
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .long {
+      font-size: 0.85rem;
+      color: #333;
+      margin-bottom: 14px;
+      line-height: 1.4;
+      display: none;
+    }
+
+    .expand-btn {
+      background: #e3f2fd;
+      color: #1e88e5;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .quiz-block {
+      display: none;
+      margin-top: 10px;
+    }
+
+    .option {
+      background: #eee;
+      padding: 8px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+
+    .correct {
+      background: #c8e6c9 !important;
+    }
+
+    .incorrect {
+      background: #ffcdd2 !important;
+    }
+
+    .no-results {
+      margin-top: 10px;
+      color: #d32f2f;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Glossari Tema 6</h1>
+    <p class="subtitle">Termes essencials amb definicions clares.</p>
+
+    <button id="quizToggle">Activar mode qüestionari</button>
+
+    <input type="text" id="searchInput" placeholder="Cerca un terme o paraula clau…">
+
+    <div id="cardsContainer" class="grid"></div>
+    <p id="noResults" class="no-results">Cap resultat trobat.</p>
+  </div>
+
+  <script>
+    const TERMS = [
+      { term: "Estoc", short: "Quantitat de productes guardats.", long: "Quantitat de mercaderies o productes emmagatzemats per ser venuts o utilitzats en el futur." },
+      { term: "Bombolla especulativa", short: "Augment artificial del valor d’un actiu.", long: "Procés en què el preu d’un actiu puja molt per especulació fins que col·lapsa sobtadament." },
+      { term: "Autarquia", short: "Autosuficiència econòmica.", long: "Sistema econòmic en què un país intenta produir-ho tot i reduir al mínim el comerç exterior." },
+      { term: "Irredemptisme", short: "Reclamar territoris considerats propis.", long: "Moviment polític que defensa recuperar territoris que es consideren nacionalment propis però estan sota domini d’un altre estat." },
+      { term: "Canceller", short: "Alt càrrec polític alemany.", long: "Cap de govern en alguns països europeus, especialment Alemanya." },
+      { term: "Gestapo", short: "Policia secreta nazi.", long: "Organització policial del règim nazi encarregada de la repressió política i social." },
+      { term: "SS", short: "Organització paramilitar nazi.", long: "Forces d’elit del règim nazi responsables de seguretat, repressió i gestió de camps." },
+      { term: "Gueto", short: "Zona de confinament jueu.", long: "Barri o zona on els nazis obligaven a viure la població jueva en condicions extremes." },
+      { term: "Solució final", short: "Pla d’extermini nazi.", long: "Projecte sistemàtic del règim nazi per eliminar tota la població jueva d’Europa." },
+      { term: "Gulag", short: "Camps de treball soviètics.", long: "Sistema de camps de treball forçat de l’URSS on es deportaven dissidents i presoners." }
+    ];
+
+    let quizMode = false;
+
+    const container = document.getElementById("cardsContainer");
+    const searchInput = document.getElementById("searchInput");
+    const noResultsEl = document.getElementById("noResults");
+    const quizToggle = document.getElementById("quizToggle");
+
+    function shuffle(arr) {
+      return arr.sort(() => Math.random() - 0.5);
+    }
+
+    quizToggle.addEventListener("click", () => {
+      quizMode = !quizMode;
+      quizToggle.textContent = quizMode ? "Desactivar mode qüestionari" : "Activar mode qüestionari";
+      renderCards(searchInput.value);
+    });
+
+    function createCard(obj) {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <div class="term">${obj.term}</div>
+        <div class="short">${obj.short}</div>
+
+        <button class="expand-btn">Ampliar info</button>
+        <div class="long">${obj.long}</div>
+
+        <div class="quiz-block"></div>
+      `;
+
+      const shortDef = card.querySelector(".short");
+      const longDef = card.querySelector(".long");
+      const btn = card.querySelector(".expand-btn");
+      const quizBlock = card.querySelector(".quiz-block");
+
+      // Botó d'ampliar info
+      btn.addEventListener("click", () => {
+        longDef.style.display = longDef.style.display === "block" ? "none" : "block";
+      });
+
+      // MODE QÜESTIONARI
+      if (quizMode) {
+        // Amagar TOT menys el terme i el test
+        btn.style.display = "none";
+        longDef.style.display = "none";
+        shortDef.style.display = "none";
+
+        quizBlock.style.display = "block";
+
+        // Incorrectes aleatòries
+        const incorrectes = TERMS
+          .filter(t => t.term !== obj.term)
+          .map(t => t.long);
+
+        const opcionsIncorrectes = shuffle(incorrectes).slice(0, 2);
+
+        // OPCIONS ALEATÒRIES (correcta + incorrectes)
+        let opcions = [
+          { text: obj.long, correct: true },
+          { text: opcionsIncorrectes[0], correct: false },
+          { text: opcionsIncorrectes[1], correct: false }
+        ];
+
+        opcions = shuffle(opcions);
+
+        opcions.forEach(o => {
+          const opt = document.createElement("div");
+          opt.className = "option";
+          opt.textContent = o.text;
+
+          opt.addEventListener("click", () => {
+            opt.classList.add(o.correct ? "correct" : "incorrect");
+          });
+
+          quizBlock.appendChild(opt);
+        });
+
+      } else {
+        // Mode normal
+        btn.style.display = "block";
+        shortDef.style.display = "block";
+        quizBlock.style.display = "none";
+      }
+
+      return card;
+    }
+
+    function renderCards(filter = "") {
+      container.innerHTML = "";
+      const q = filter.toLowerCase();
+
+      // ORDRE ALEATORI EN MODE QÜESTIONARI
+      const list = quizMode ? shuffle([...TERMS]) : TERMS;
+
+      const filtered = list.filter(t =>
+        (t.term + t.short + t.long).toLowerCase().includes(q)
+      );
+
+      if (filtered.length === 0) {
+        noResultsEl.style.display = "block";
+        return;
+      }
+
+      noResultsEl.style.display = "none";
+      filtered.forEach(t => container.appendChild(createCard(t)));
+    }
+
+    searchInput.addEventListener("input", e => renderCards(e.target.value));
+
+    renderCards();
+  </script>
+</body>
+</html>
